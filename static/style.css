@@ -386,3 +386,99 @@ button.secondary {
 .codehilite .vi { color: #19177C }
 .codehilite .vm { color: #19177C }
 .codehilite .il { color: #666666 }
+
+/* Pagination, tag links, and overflow fixes */
+select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--text);
+  padding: 9px;
+  font: inherit;
+}
+
+.search-form {
+  grid-template-columns: minmax(220px, 1fr) minmax(140px, 220px) minmax(120px, 150px) auto auto;
+}
+
+.card-main {
+  min-width: 0;
+}
+
+.solution-body {
+  white-space: normal;
+}
+
+.tag {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.tag:hover {
+  background: #d0e3f1;
+  color: #2c5877;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 18px 0 0;
+  align-items: center;
+}
+
+.pagination a,
+.pagination span {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  background: #fff;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.pagination a:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.pagination .current {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+
+.pagination .disabled,
+.pagination .ellipsis {
+  color: var(--muted);
+  background: #f8f9f9;
+}
+
+.markdown-body,
+.markdown-body .codehilite,
+.markdown-body pre {
+  max-width: 100%;
+}
+
+.markdown-body .codehilite {
+  padding: 12px;
+}
+
+.markdown-body pre,
+.markdown-body .codehilite,
+.markdown-body .codehilite pre {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markdown-body pre code,
+.markdown-body .codehilite code {
+  display: inline-block;
+  min-width: max-content;
+}
+
+@media (max-width: 760px) {
+  .search-form { grid-template-columns: 1fr; }
+}

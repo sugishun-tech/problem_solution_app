@@ -1,3 +1,5 @@
+import html
+import math
 import os
 import re
 import sqlite3
@@ -103,10 +105,24 @@ def create_app() -> Flask:
         query = request.args.get("q", "").strip()
         tag = request.args.get("tag", "").strip()
         include_deleted = request.args.get("include_deleted") == "1"
+        page = parse_positive_int(request.args.get("page"), default=1)
+        per_page = parse_per_page(request.args.get("per_page"))
+
         rows = search_records(g.db, query=query, tag=tag, include_deleted=include_deleted)
+        total = len(rows)
+        total_pages = max(1, math.ceil(total / per_page))
+        page = min(page, total_pages)
+        start = (page - 1) * per_page
+        end = start + per_page
+        paged_rows = rows[start:end]
+
         return render_template(
             "index.html",
-            rows=rows,
+            rows=paged_rows,
+            total=total,
+            page=page,
+            per_page=per_page,
+            total_pages=total_pages,
             query=query,
             tag=tag,
             include_deleted=include_deleted,
@@ -186,9 +202,85 @@ def create_app() -> Flask:
     return app
 
 
+
+def parse_positive_int(value: str | None, default: int) -> int:
+    try:
+        parsed = int(value or "")
+    except ValueError:
+        return default
+    return parsed if parsed > 0 else default
+
+
+def parse_per_page(value: str | None) -> int:
+    allowed = {5, 10, 20, 50, 100}
+    parsed = parse_positive_int(value, default=10)
+    return parsed if parsed in allowed else 10
+
+
+def is_pipe_table_line(line: str) -> bool:
+    stripped = line.strip()
+    return stripped.startswith("|") and stripped.endswith("|") and stripped.count("|") >= 3
+
+
+def is_markdown_table_separator(line: str) -> bool:
+    stripped = line.strip().strip("|")
+    cells = [cell.strip() for cell in stripped.split("|")]
+    return bool(cells) and all(re.fullmatch(r":?-{3,}:?", cell or "") for cell in cells)
+
+
+def pipe_cells(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def build_html_table(lines: list[str]) -> str:
+    rows = []
+    for line in lines:
+        cells = "".join(f"<td>{html.escape(cell)}</td>" for cell in pipe_cells(line))
+        rows.append(f"<tr>{cells}</tr>")
+    return "<table><tbody>" + "".join(rows) + "</tbody></table>"
+
+
+def preprocess_loose_pipe_tables(text: str) -> str:
+    """Support simple pipe tables without Markdown's mandatory separator row.
+
+    Standard Markdown tables like:
+
+        | a | b |
+        |---|---|
+        | c | d |
+
+    are left untouched and handled by Python-Markdown. Blocks like:
+
+        |a|b|c|
+        |d|e|f|
+
+    are converted to a plain HTML table. Apparently even tables need border control.
+    """
+    lines = text.splitlines()
+    output: list[str] = []
+    i = 0
+    while i < len(lines):
+        if not is_pipe_table_line(lines[i]):
+            output.append(lines[i])
+            i += 1
+            continue
+
+        block = []
+        while i < len(lines) and is_pipe_table_line(lines[i]):
+            block.append(lines[i])
+            i += 1
+
+        if len(block) >= 2 and not (len(block) >= 2 and is_markdown_table_separator(block[1])):
+            output.append(build_html_table(block))
+        else:
+            output.extend(block)
+
+    return "\n".join(output)
+
 def render_markdown(text: str) -> Markup:
+    prepared_text = preprocess_loose_pipe_tables(text)
     html = markdown.markdown(
-        text,
+        prepared_text,
         extensions=MARKDOWN_EXTENSIONS,
         extension_configs=MARKDOWN_EXTENSION_CONFIGS,
         output_format="html5",
