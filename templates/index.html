@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}検索 - Problem Solution Board{% endblock %}
+{% block content %}
+<section class="panel search-panel">
+  <h1>問題と対策を検索</h1>
+  <form method="get" action="{{ url_for('index') }}" class="search-form">
+    <label>
+      正規表現検索
+      <input type="text" name="q" value="{{ query }}" placeholder="例: timeout|エラー|permission">
+    </label>
+    <label>
+      タグ
+      <input type="text" name="tag" value="{{ tag }}" placeholder="例: linux">
+    </label>
+    <label class="check-row">
+      <input type="checkbox" name="include_deleted" value="1" {% if include_deleted %}checked{% endif %}>
+      削除済みも表示
+    </label>
+    <button type="submit">検索</button>
+  </form>
+  <p class="hint">検索対象は problem_title と solution_body です。SQLite検索ではなくPythonの re によるgrep風正規表現検索です。本文はMarkdownとして表示し、```py のようなコードフェンスは言語別にハイライトします。DBに全文検索を期待する人間の業はここでは扱いません。</p>
+</section>
+
+<section class="result-summary">
+  <strong>{{ rows|length }}</strong> 件
+</section>
+
+{% for row in rows %}
+<article class="question-card {% if row.deleted_at %}deleted{% endif %}">
+  <div class="vote-box">
+    <div class="id-label">id</div>
+    <div class="id-number">{{ row.id }}</div>
+  </div>
+  <div class="card-main">
+    <h2>{{ row.problem_title }}</h2>
+    <div class="solution-body markdown-body">{{ row.solution_body|markdown }}</div>
+    <div class="tags">
+      {% for tag in row.tag_list %}
+        <span class="tag">{{ tag }}</span>
+      {% endfor %}
+    </div>
+    <div class="meta">
+      <span>created: {{ row.created_at }}</span>
+      <span>updated: {{ row.updated_at }}</span>
+      {% if row.deleted_at %}<span class="deleted-text">deleted: {{ row.deleted_at }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="actions">
+    {% if row.deleted_at %}
+      <form method="post" action="{{ url_for('restore_record', record_id=row.id) }}">
+        <button class="secondary" type="submit">復元</button>
+      </form>
+    {% else %}
+      <form method="post" action="{{ url_for('delete_record', record_id=row.id) }}" onsubmit="return confirm('論理削除しますか？');">
+        <button class="danger" type="submit">削除</button>
+      </form>
+    {% endif %}
+  </div>
+</article>
+{% else %}
+<div class="empty panel">
+  <h2>該当なし</h2>
+  <p>登録がないか、正規表現が狭すぎます。コンピュータは忖度検索をしません。</p>
+</div>
+{% endfor %}
+{% endblock %}

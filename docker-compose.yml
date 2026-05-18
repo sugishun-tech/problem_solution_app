@@ -1,0 +1,13 @@
+services:
+  problem-solution-board:
+    build: .
+    container_name: problem-solution-board
+    environment:
+      PORT: ${PORT:-19743}
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      DATA_DIR: /app/data
+    ports:
+      - "${HOST_PORT:-19743}:${PORT:-19743}"
+    volumes:
+      - ./data:/app/data
+    restart: always

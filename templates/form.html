@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}登録 - Problem Solution Board{% endblock %}
+{% block content %}
+<section class="panel form-panel">
+  <h1>問題と対策を登録</h1>
+  <form method="post" class="record-form">
+    <label>
+      問題タイトル
+      <input type="text" name="problem_title" maxlength="300" required value="{{ record.problem_title or '' }}" placeholder="例: cron が多重起動して処理が詰まる">
+    </label>
+    <label>
+      対策本文
+      <textarea name="solution_body" required rows="14" placeholder="Markdown対応。例:
+
+```py
+print(&quot;hello&quot;)
+```
+
+- flock を使う
+- ログと終了コードを確認する">{{ record.solution_body or '' }}</textarea>
+    </label>
+    <label>
+      タグ
+      <input type="text" name="tags" value="{{ record.tags or '' }}" placeholder="例: linux, cron, bash">
+    </label>
+    <div class="form-actions">
+      <button type="submit">登録</button>
+      <a class="cancel" href="{{ url_for('index') }}">戻る</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
